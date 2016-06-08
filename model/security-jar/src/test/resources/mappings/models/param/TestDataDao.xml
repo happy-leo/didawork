@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tt.test.dao.SysDatacodeDao">
+    
+
+    
+   <sql id="testSysDataColumns">
+		id,field,fieldname,code,codedesc,sortno,editmodel,enabled,remark
+	</sql>
+	
+	<select id="get" resultType="com.tt.test.data.SysDatacode">
+		SELECT 
+		<include refid="testSysDataColumns"/>
+		FROM sys_datacode 
+		WHERE id = #{id}
+	</select> 
+	
+	<insert id="insert">
+		INSERT INTO sys_datacode(
+			id,field,fieldname,code,codedesc
+		) VALUES (
+			#{id},
+			#{field},
+			#{fieldname},
+			#{code},
+			#{codedesc}
+		)
+	</insert>
+	
+<select id="findList" resultType="com.tt.test.data.SysDatacode">
+		SELECT 
+          *
+		FROM sys_datacode  
+
+	</select>
+	
+	<select id="findAllList" resultType="com.tt.test.data.SysDatacode">
+		SELECT 
+			<include refid="testSysDataColumns"/>
+		FROM sys_datacode 
+		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY id DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+
+	
+	<update id="update">
+		UPDATE sys_datacode SET 	
+			field = #{field},
+			fieldname = #{fieldname},
+			code = #{code},
+			codedesc = #{codedesc}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		delete  from sys_datacode  
+		WHERE ID = #{id}
+	</update>
+
+</mapper>

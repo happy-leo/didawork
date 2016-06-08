@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tt.modules.sys.dao.RoleDao">
+    
+    <resultMap id="roleResult" type="Role">
+		<id property="id" column="id" />
+		<result property="name" column="name" />
+		<result property="enname" column="enname" />
+		<result property="roleType" column="roleType" />
+		<result property="remarks" column="remarks" />
+		<result property="useable" column="useable" />
+		<collection property="resourceList" ofType="Resource">
+			<id property="id" column="resourceList.id" />
+		</collection>
+		<collection property="organizationList" ofType="Organization">
+			<id property="id" column="organizationList.id" />
+		</collection>
+	</resultMap>
+	
+    <sql id="roleColumns">
+    	a.id,
+    	a.organizationId,
+    	a.name,
+    	a.enname,
+    	a.roleType,
+		a.remarks,
+		a.delFlag,
+    	a.useable
+    </sql>
+    
+	<select id="get" resultMap="roleResult">
+		SELECT
+			<include refid="roleColumns"/>
+		FROM sys_role a
+		LEFT JOIN sys_role_resource rr ON rr.role_id = a.id
+		LEFT JOIN sys_role_organization ro ON ro.role_id = a.id
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="getByName" resultType="Role">
+		SELECT
+			<include refid="roleColumns"/>
+		FROM sys_role a
+		WHERE a.name = #{name} AND a.delFlag = #{DEL_FLAG_NORMAL}
+	</select>
+	
+	<select id="getByEnname" resultType="Role">
+		SELECT
+			<include refid="roleColumns"/>
+		FROM sys_role a
+		WHERE a.enname = #{enname} AND a.delFlag = #{DEL_FLAG_NORMAL}
+	</select>
+	
+	<select id="findList" resultMap="roleResult">
+		SELECT <!-- DISTINCT -->
+			<include refid="roleColumns"/>
+		FROM sys_role a
+		LEFT JOIN sys_user_role ur ON ur.role_id = a.id
+		LEFT JOIN sys_user u ON u.id = ur.user_id
+		LEFT JOIN sys_role_organization rr ON rr.role_id = a.id
+		WHERE a.delFlag = #{DEL_FLAG_NORMAL} AND a.useable=#{useable}
+		<if test="user != null and user.id != null and user.id != ''">
+			AND u.id = #{user.id}
+		</if>
+		<if test="user != null and user.loginName != null and user.loginName != ''">
+			AND u.loginName = #{user.loginName}
+		</if>
+		<!-- 数据范围过滤 -->
+		${sqlMap.dsf}
+		ORDER BY  a.name
+	</select>
+	
+	<select id="findAllList" resultType="Role">
+		SELECT
+			<include refid="roleColumns"/>
+		FROM sys_role a
+		WHERE a.delFlag = #{DEL_FLAG_NORMAL}
+		ORDER BY a.name
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO sys_role(
+			id,
+			name, 
+			enname, 
+			roleType，
+			remarks, 
+			delFlag,
+			useable
+		) VALUES (
+			#{id}, 
+			#{name}, 
+			#{enname}, 
+			#{roleType}, 
+			#{remarks}, 
+			#{delFlag},
+			#{useable}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE sys_role SET 
+			name = #{name}, 
+			enname = #{enname}, 
+			role_type = #{roleType}, 
+			data_scope = #{dataScope}, 
+			remarks = #{remarks},
+			useable = #{useable}
+		WHERE id = #{id}
+	</update>
+	
+	<delete id="deleteRoleResource">
+		DELETE FROM sys_role_resource WHERE role_id = #{id}
+	</delete>
+	
+	<insert id="insertRoleResource">
+		INSERT INTO sys_role_resource(role_id, resource_id)
+		<foreach collection="resourceList" item="resource" separator=" union all ">
+			SELECT #{id}, #{resource.id}
+			<if test="dbName != 'mssql'">
+			FROM dual
+			</if>
+		</foreach>
+	</insert>
+	
+	<delete id="deleteRoleOrganization">
+		DELETE FROM sys_role_organization WHERE role_id = #{id}
+	</delete>
+	
+	<insert id="insertRoleOrganization">
+		INSERT INTO sys_role_organization(role_id, organization_id)
+		<foreach collection="organizationList" item="organization" separator=" union all ">
+			SELECT #{id}, #{organization.id}
+			<if test="dbName != 'mssql'">
+			FROM dual
+			</if>
+		</foreach>
+	</insert>
+	
+	<update id="delete">
+		UPDATE sys_role SET 
+			delFlag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+</mapper>

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tt.modules.sys.dao.ResourceDao">
+	
+	<sql id="resourceColumns">
+		a.id,
+		a.parentId AS "parent.id",
+		a.parentIds,
+		a.name,
+		a.href,
+		a.target,
+		a.icon,
+		a.sort,
+		a.useable,
+		a.permission,
+		a.type,
+		a.delFlag,
+		p.name AS "parent.name"
+	</sql>
+	
+	<sql id="resourceJoins">
+		LEFT JOIN sys_resource p ON p.id = a.parentId
+    </sql>
+	
+	<select id="get" resultType="Resource">
+		SELECT
+			<include refid="resourceColumns"/>
+		FROM sys_resource a
+		<include refid="resourceJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findAllList" resultType="Resource">
+		SELECT
+			<include refid="resourceColumns"/>
+		FROM sys_resource a
+		<include refid="resourceJoins"/>
+		WHERE a.delFlag = #{DEL_FLAG_NORMAL}
+		ORDER BY a.sort
+	</select>
+	
+	<select id="findByParentIdsLike" resultType="Resource">
+		SELECT
+			a.id,
+			a.parentId AS "parent.id",
+			a.parentIds
+		FROM sys_resource a
+		WHERE a.delFlag = #{DEL_FLAG_NORMAL} AND a.parentIds LIKE #{parentIds}
+		ORDER BY a.sort
+	</select>
+	
+	<select id="findByUserId" resultType="Resource">
+		SELECT DISTINCT
+			<include refid="resourceColumns"/>
+		FROM sys_resource a
+		LEFT JOIN sys_resource p ON p.id = a.parentId
+		JOIN sys_role_menu rm ON rm.menu_id = a.id
+		JOIN sys_role r ON r.id = rm.role_id AND r.useable='1'
+		JOIN sys_user_role ur ON ur.role_id = r.id
+		JOIN sys_user u ON u.id = ur.user_id AND u.id = #{userId}
+		WHERE a.delFlag = #{DEL_FLAG_NORMAL} AND r.delFlag = #{DEL_FLAG_NORMAL} AND u.delFlag = #{DEL_FLAG_NORMAL} 
+		ORDER BY a.sort
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO sys_resource(
+			id, 
+			parentId, 
+			parentIds, 
+			name, 
+			href, 
+			target, 
+			icon, 
+			sort, 
+			useable, 
+			permission, 
+			type, 
+			delFlag
+		) VALUES (
+			#{id}, 
+			#{parent.id}, 
+			#{parentIds}, 
+			#{name}, 
+			#{href}, 
+			#{target}, 
+			#{icon}, 
+			#{sort}, 
+			#{useable}, 
+			#{permission}, 
+			#{type}, 
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE sys_resource SET 
+			parentId = #{parent.id}, 
+			parentIds = #{parentIds}, 
+			name = #{name}, 
+			href = #{href}, 
+			target = #{target}, 
+			icon = #{icon}, 
+			sort = #{sort}, 
+			useable = #{useable}, 
+			permission = #{permission}, 
+			type = #{type}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="updateParentIds">
+		UPDATE sys_resource SET 
+			parentId = #{parent.id}, 
+			parentIds = #{parentIds}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="updateSort">
+		UPDATE sys_resource SET 
+			sort = #{sort}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		UPDATE sys_resource SET 
+			delFlag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id} OR parent_ids LIKE 
+					<if test="dbName == 'oracle'">'%,'||#{id}||',%'</if>
+					<if test="dbName == 'mssql'">'%,'+#{id}+',%'</if>
+					<if test="dbName == 'mysql'">CONCAT('%,', #{id}, ',%')</if>
+	</update>
+	
+</mapper>

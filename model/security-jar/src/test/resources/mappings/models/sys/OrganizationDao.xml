@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tt.modules.sys.dao.OrganizationDao">
+
+	<sql id="organizationColumns">
+		a.id,
+		a.parentId AS "parent.id",
+		p.name AS "parent.name",
+		a.parentIds,
+		a.name,
+		a.sort,
+		a.grade,
+		a.type,
+		a.useable,
+		a.remarks,
+		a.delFlag
+	</sql>
+	
+ 	<sql id="organizationJoins">
+		LEFT JOIN sys_organization p ON p.id = a.parentId
+    </sql> 
+	
+	<select id="get" resultType="Organization">
+		SELECT
+			<include refid="organizationColumns"/>
+		FROM sys_organization a
+	<include refid="organizationJoins"/> 
+		WHERE a.id = #{id}
+	</select>
+	
+
+	<select id="findList" resultType="Organization">
+		SELECT
+			<include refid="organizationColumns"/>
+		FROM sys_organization a
+		<include refid="organizationJoins"/>
+		WHERE a.delFlag = #{DEL_FLAG_NORMAL} and a.parentIds = #{parentIds}
+		<!-- 数据范围过滤 
+		${sqlMap.dsf}   -->
+	<!-- 	OR a.id = #{currentUser.office.id} -->
+		<!-- 数据范围 -->
+
+
+	</select>
+			
+	<select id="findAllList" resultType="Organization">
+		SELECT
+			<include refid="organizationColumns"/>
+		FROM sys_organization a
+ 		<include refid="organizationJoins"/> 
+		WHERE a.delFlag = #{DEL_FLAG_NORMAL}
+		ORDER BY a.parentId
+	</select>
+	
+	<select id="findByParentIdsLike" resultType="Organization">
+		SELECT
+			<include refid="organizationColumns"/>
+		FROM sys_organization a
+		<include refid="organizationJoins"/>
+		WHERE a.delFlag = #{DEL_FLAG_NORMAL} AND a.parentIds LIKE #{parentIds}
+		ORDER BY a.parentId
+	</select>
+	
+    <select id="findByParentId" resultType="Organization">
+		SELECT
+			<include refid="organizationColumns"/>
+		FROM sys_organization a
+	<include refid="organizationJoins"/> 
+		WHERE a.delFlag = #{DEL_FLAG_NORMAL} AND a.parentIds = #{parentIds}
+		ORDER BY a.parentId
+	</select>
+	
+	
+	
+	<insert id="insert">
+		INSERT INTO sys_organization(
+			id, 
+			parentId, 
+			parentIds, 
+			name, 
+			sort, 
+			type, 
+			grade, 
+			remarks, 
+			delFlag,
+			useable
+		) VALUES (
+			#{id}, 
+			#{parent.id}, 
+			#{parentIds},  
+			#{name}, 
+			#{sort}, 
+			#{type}, 
+			#{grade}, 
+			#{remarks}, 
+			#{delFlag},
+			#{useable}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE sys_organization SET 
+			parentId = #{parent.id}, 
+			parentIds = #{parentIds}, 
+			name = #{name}, 
+			type = #{type}, 
+			sort = #{sort},
+			grade = #{grade}, 
+			remarks = #{remarks},
+			useable=#{useable}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="updateParentIds">
+		UPDATE sys_organization SET 
+			parentId = #{parent.id}, 
+			parentIds = #{parentIds}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		UPDATE sys_organization SET 
+			delFlag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id} OR parentIds LIKE 
+					<if test="dbName == 'oracle'">'%,'||#{id}||',%'</if>
+					<if test="dbName == 'mssql'">'%,'+#{id}+',%'</if>
+					<if test="dbName == 'mysql'">CONCAT('%,', #{id}, ',%')</if>
+	</update>
+	
+</mapper>
